@@ -1,0 +1,996 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Idiom Flashcards</title>
+  <style>
+    :root {
+      --bg1: #0a0220;
+      --bg2: #12052f;
+      --bg3: #1b0a45;
+      --text: #f7f3ff;
+      --muted: #c7bff0;
+      --shadow: 0 0 24px rgba(123, 92, 255, 0.24), 0 0 42px rgba(0, 229, 255, 0.12);
+      --radius: 18px;
+      --border: 1px solid rgba(130, 104, 255, 0.28);
+    }
+
+    * { box-sizing: border-box; }
+
+    html, body {
+      margin: 0;
+      padding: 0;
+      min-height: 100%;
+      font-family: "Trebuchet MS", "Segoe UI", Arial, sans-serif;
+      color: var(--text);
+      background:
+        radial-gradient(circle at 15% 18%, rgba(123,92,255,.22), transparent 20%),
+        radial-gradient(circle at 85% 12%, rgba(0,229,255,.14), transparent 18%),
+        radial-gradient(circle at 80% 78%, rgba(255,79,216,.16), transparent 22%),
+        linear-gradient(135deg, var(--bg1), var(--bg2) 48%, var(--bg3));
+    }
+
+    body {
+      display: flex;
+      justify-content: flex-end;
+      padding: 8px;
+    }
+
+    .app {
+      width: min(1460px, 100%);
+      min-height: calc(100vh - 16px);
+      display: grid;
+      grid-template-rows: auto auto 1fr;
+      gap: 8px;
+    }
+
+    .topbar, .toolbar, .stats, .empty-state {
+      background: linear-gradient(180deg, rgba(28,18,70,.88), rgba(18,11,52,.86));
+      border: var(--border);
+      box-shadow: var(--shadow);
+      border-radius: var(--radius);
+      backdrop-filter: blur(10px);
+    }
+
+    .topbar {
+      padding: 10px 12px;
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: clamp(1.05rem, 2.1vw, 1.7rem);
+      line-height: 1.05;
+      text-shadow: 0 0 14px rgba(123,92,255,.22);
+    }
+
+    .subtitle {
+      color: var(--muted);
+      font-size: 0.82rem;
+      margin-top: 2px;
+    }
+
+    .toolbar {
+      padding: 8px 10px;
+      display: grid;
+      grid-template-columns: minmax(260px, 1.35fr) minmax(190px, 1fr) auto auto auto minmax(420px, 520px);
+      gap: 8px;
+      align-items: end;
+    }
+
+    .field {
+      display: grid;
+      gap: 4px;
+      min-width: 0;
+    }
+
+    .label {
+      font-weight: 800;
+      font-size: 0.74rem;
+      color: #efeaff;
+      opacity: .88;
+    }
+
+    .segmented {
+      display: flex;
+      gap: 6px;
+      flex-wrap: nowrap;
+      min-width: 0;
+    }
+
+    .segmented button,
+    .btn {
+      border: 1px solid rgba(167, 144, 255, 0.32);
+      border-radius: 12px;
+      padding: 8px 10px;
+      font-size: 0.84rem;
+      cursor: pointer;
+      color: #fff;
+      position: relative;
+      overflow: hidden;
+      transition: transform 0.22s ease, box-shadow 0.22s ease, opacity 0.22s ease, background 0.22s ease;
+      box-shadow: 0 0 14px rgba(123,92,255,.2), inset 0 0 0 1px rgba(255,255,255,.05);
+      background: linear-gradient(135deg, rgba(54,30,122,.95), rgba(25,18,77,.95));
+      font-weight: 800;
+      letter-spacing: .01em;
+      white-space: nowrap;
+      min-width: 0;
+    }
+
+    .segmented button.active,
+    .btn.primary,
+    .icon-btn {
+      background: linear-gradient(135deg, #7b5cff, #00d9ff 52%, #ff4fd8);
+      background-size: 220% 220%;
+      animation: neonFlow 6s linear infinite;
+      color: white;
+      box-shadow: 0 0 16px rgba(123,92,255,.34), 0 0 26px rgba(0,229,255,.18);
+    }
+
+    .btn.secondary {
+      background: linear-gradient(135deg, #00d9ff, #22ffd1, #7b5cff);
+      background-size: 220% 220%;
+      animation: neonFlow 6.5s linear infinite;
+    }
+
+    .btn.warn {
+      background: linear-gradient(135deg, #ff4fd8, #ff7a59, #ffd166);
+      background-size: 220% 220%;
+      animation: neonFlow 7s linear infinite;
+    }
+
+    .btn:hover,
+    .segmented button:hover,
+    .icon-btn:hover {
+      transform: translateY(-1px) scale(1.01);
+      box-shadow: 0 0 18px rgba(123,92,255,.34), 0 0 28px rgba(0,229,255,.14);
+    }
+
+    .btn::before,
+    .segmented button::before,
+    .icon-btn::before {
+      content: "";
+      position: absolute;
+      top: 0;
+      left: -130%;
+      width: 70%;
+      height: 100%;
+      background: linear-gradient(90deg, transparent, rgba(255,255,255,.3), transparent);
+      transform: skewX(-20deg);
+      animation: shimmer 4.6s linear infinite;
+      pointer-events: none;
+    }
+
+    .stats {
+      padding: 7px 10px;
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .stat {
+      min-width: 86px;
+      background: linear-gradient(180deg, rgba(41,24,100,.86), rgba(18,10,58,.82));
+      border-radius: 14px;
+      padding: 7px 8px;
+      border: 1px solid rgba(133, 106, 255, .22);
+      box-shadow: inset 0 0 16px rgba(0,229,255,.05), 0 0 14px rgba(123,92,255,.14);
+      text-align: center;
+    }
+
+    .stat b {
+      display: block;
+      font-size: 1.06rem;
+      margin-bottom: 1px;
+      color: #fff;
+    }
+
+    .mode-chip {
+      cursor: pointer;
+      min-width: 120px;
+      appearance: none;
+    }
+
+    .mode-chip:hover {
+      transform: translateY(-1px);
+      box-shadow: inset 0 0 16px rgba(0,229,255,.08), 0 0 18px rgba(123,92,255,.22);
+    }
+
+    .stat span {
+      font-size: 0.76rem;
+      color: var(--muted);
+    }
+
+    .main {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 8px;
+      min-height: 0;
+    }
+
+    .card-zone {
+      min-height: 0;
+      display: grid;
+      place-items: center;
+      padding: 0;
+      position: relative;
+    }
+
+    .flashcard-wrap {
+      width: min(860px, 100%);
+      height: min(66vh, 720px);
+      min-height: 430px;
+      perspective: 1600px;
+      position: relative;
+    }
+
+    .flashcard {
+      position: relative;
+      width: 100%;
+      height: 100%;
+      transform-style: preserve-3d;
+      transition: transform 0.72s cubic-bezier(.2,.75,.25,1), opacity 0.35s ease, filter 0.35s ease;
+      cursor: pointer;
+    }
+
+    .flashcard.flipped { transform: rotateY(180deg); }
+    .flashcard.fade-out-left { animation: learnedOut 0.65s ease forwards; }
+    .flashcard.fade-in { animation: nextIn 0.55s ease; }
+    .flashcard.shuffle-anim { animation: shufflePulse 0.6s ease; }
+
+    .card-face {
+      position: absolute;
+      inset: 0;
+      border-radius: 28px;
+      background: linear-gradient(180deg, rgba(28,17,73,.96), rgba(14,9,44,.96));
+      box-shadow: 0 0 24px rgba(123,92,255,.24), 0 0 36px rgba(0,229,255,.08);
+      border: 1px solid rgba(132, 108, 255, 0.26);
+      backface-visibility: hidden;
+      overflow: hidden;
+      display: grid;
+      grid-template-rows: auto 1fr;
+    }
+
+    .card-front::before,
+    .card-back::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background:
+        radial-gradient(circle at top left, rgba(123,92,255,.22), transparent 22%),
+        radial-gradient(circle at bottom right, rgba(0,229,255,.1), transparent 24%);
+      pointer-events: none;
+    }
+
+    .card-back { transform: rotateY(180deg); }
+
+    .card-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 12px 2px;
+      position: relative;
+      z-index: 1;
+      min-height: 32px;
+    }
+
+    .badge {
+      background: linear-gradient(135deg, rgba(123,92,255,.22), rgba(0,229,255,.16));
+      color: #dcd4ff;
+      border-radius: 999px;
+      padding: 5px 9px;
+      font-weight: 700;
+      font-size: 0.78rem;
+      border: 1px solid rgba(140, 118, 255, .2);
+      box-shadow: 0 0 10px rgba(123,92,255,.12);
+    }
+
+    .tap-tip {
+      color: #b9b1ea;
+      font-weight: 700;
+      font-size: 0.76rem;
+    }
+
+    .card-body {
+      position: relative;
+      z-index: 1;
+      display: grid;
+      align-items: center;
+      justify-items: center;
+      padding: 8px 18px 18px;
+      gap: 18px;
+      text-align: center;
+    }
+
+    .phrase {
+      font-size: clamp(1.5rem, 3vw, 2.5rem);
+      line-height: 1.14;
+      font-weight: 900;
+      max-width: 92%;
+      color: #fff;
+      text-shadow: 0 0 10px rgba(123,92,255,.22);
+    }
+
+    .phrase.small { font-size: clamp(1.12rem, 2.4vw, 1.8rem); }
+
+    .image-box {
+      width: min(470px, 84%);
+      max-height: 80%;
+      aspect-ratio: 1 / 1;
+      border-radius: 28px;
+      overflow: hidden;
+      box-shadow: 0 0 24px rgba(123,92,255,.22), 0 0 34px rgba(0,229,255,.08);
+      background: rgba(255,255,255,.05);
+      border: 1px solid rgba(145, 121, 255, .24);
+      display: grid;
+      place-items: center;
+    }
+
+    .image-box img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+
+    .image-fallback {
+      padding: 18px;
+      color: var(--muted);
+      font-size: 1rem;
+      font-weight: 700;
+      text-align: center;
+    }
+
+    .icon-btn {
+      position: absolute;
+      width: 54px;
+      height: 54px;
+      border-radius: 50%;
+      border: 1px solid rgba(167, 144, 255, 0.3);
+      display: grid;
+      place-items: center;
+      font-size: 1.4rem;
+      font-weight: 900;
+      z-index: 3;
+      padding: 0;
+    }
+
+    .prev-card { left: 16px; bottom: 16px; }
+    .next-card { right: 16px; bottom: 16px; }
+    .flip-card { right: 16px; bottom: 16px; }
+    .card-back .flip-card { left: 16px; right: auto; }
+
+    .empty-state {
+      padding: 30px;
+      text-align: center;
+      display: none;
+    }
+
+    .empty-state.show { display: block; }
+
+    .empty-state h2 {
+      margin-top: 0;
+      font-size: clamp(1.4rem, 3vw, 2rem);
+    }
+
+    .hint {
+      color: var(--muted);
+      max-width: 700px;
+      margin: 0 auto;
+      line-height: 1.5;
+      font-size: 0.95rem;
+    }
+
+    @keyframes learnedOut {
+      0% { opacity: 1; transform: rotateY(var(--flip, 0deg)) translateX(0) scale(1); }
+      100% { opacity: 0; transform: rotateY(var(--flip, 0deg)) translateX(-90px) scale(.9); filter: blur(2px); }
+    }
+
+    @keyframes nextIn {
+      0% { opacity: 0; transform: translateY(18px) scale(.96); }
+      100% { opacity: 1; transform: translateY(0) scale(1); }
+    }
+
+    @keyframes shufflePulse {
+      0% { transform: rotate(0deg) scale(1); }
+      25% { transform: rotate(-2deg) scale(1.01); }
+      50% { transform: rotate(2deg) scale(.99); }
+      100% { transform: rotate(0deg) scale(1); }
+    }
+
+    @keyframes shimmer {
+      0% { left: -130%; }
+      100% { left: 150%; }
+    }
+
+    @keyframes neonFlow {
+      0% { background-position: 0% 50%; }
+      50% { background-position: 100% 50%; }
+      100% { background-position: 0% 50%; }
+    }
+
+    @media (max-width: 1180px) {
+      .toolbar {
+        grid-template-columns: 1fr 1fr 1fr;
+      }
+
+      .toolbar .btn,
+      .toolbar .stats {
+        width: 100%;
+      }
+
+      .stats {
+        grid-column: 1 / -1;
+        justify-content: center;
+        flex-wrap: wrap;
+      }
+    }
+
+    @media (max-width: 780px) {
+      body { padding: 6px; }
+
+      .app {
+        min-height: calc(100vh - 12px);
+        gap: 6px;
+      }
+
+      .topbar {
+        padding: 8px 10px;
+        gap: 8px;
+      }
+
+      h1 {
+        font-size: 1rem;
+      }
+
+      .subtitle { display: none; }
+
+      .toolbar {
+        grid-template-columns: 1fr 1fr;
+        gap: 6px;
+        padding: 8px;
+      }
+
+      .label {
+        font-size: 0.7rem;
+      }
+
+      .segmented button,
+      .btn {
+        font-size: 0.78rem;
+        padding: 8px 8px;
+      }
+
+      .controls-inline {
+        grid-column: 1 / -1;
+      }
+
+      .stats {
+        gap: 6px;
+        padding: 6px 8px;
+      }
+
+      .stat {
+        min-width: calc(50% - 6px);
+        flex: 1 1 calc(50% - 6px);
+      }
+
+      .flashcard-wrap {
+        width: 100%;
+        height: min(58vh, 560px);
+        min-height: 360px;
+      }
+
+      .badge {
+        font-size: 0.74rem;
+        padding: 5px 8px;
+      }
+
+      .tap-tip {
+        font-size: 0.72rem;
+      }
+
+      .card-body {
+        padding: 8px 12px 14px;
+        gap: 14px;
+      }
+
+      .phrase {
+        font-size: clamp(1rem, 4.8vw, 1.55rem);
+      }
+
+      .phrase.small {
+        font-size: clamp(0.9rem, 4vw, 1.24rem);
+      }
+
+      .image-box {
+        width: min(300px, 92%);
+      }
+
+      .icon-btn {
+        width: 44px;
+        height: 44px;
+        font-size: 1.08rem;
+      }
+
+      .prev-card { left: 10px; bottom: 10px; }
+      .next-card,
+      .flip-card { right: 10px; bottom: 10px; }
+      .card-back .flip-card { left: 10px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <div class="topbar">
+      <div>
+        <h1 id="titleText">Идиомы — флеш-карточки</h1>
+        <div class="subtitle" id="subtitleText">Нажми на карточку, чтобы перевернуть её.</div>
+      </div>
+      <button class="btn secondary" id="uiLangBtn" type="button">English UI</button>
+    </div>
+
+    <div class="toolbar">
+      <div class="field">
+        <div class="label" id="filterLabel">Показ карточек</div>
+        <div class="segmented" id="filterButtons">
+          <button type="button" class="active" data-filter="active">Только активные</button>
+          <button type="button" data-filter="all">Все карточки</button>
+        </div>
+      </div>
+
+      <div class="field">
+        <div class="label" id="startLabel">Начать заново</div>
+        <button class="btn primary" id="restartBtn" type="button">Начать заново</button>
+      </div>
+
+      <button class="btn warn controls-inline" id="shuffleBtn" type="button">Перемешать</button>
+      <button class="btn secondary controls-inline" id="learnedBtn" type="button">Выучено</button>
+      <button class="btn controls-inline" id="resetLearnedBtn" type="button">Сбросить выученные</button>
+
+      <div class="stats controls-inline">
+        <div class="stat"><b id="currentStat">1 / 50</b><span id="currentLabel">Карточка</span></div>
+        <div class="stat"><b id="activeStat">50</b><span id="activeLabel">Активные</span></div>
+        <div class="stat"><b id="learnedStat">0</b><span id="learnedLabel">Выученные</span></div>
+        <button class="stat mode-chip" id="modeToggleBtn" type="button"><b id="modeStat">RU → EN</b><span id="modeStatLabel">Режим</span></button>
+      </div>
+    </div>
+
+    <div class="main">
+      <div class="card-zone">
+      <div class="flashcard-wrap" id="flashcardWrap">
+        <div class="flashcard fade-in" id="flashcard" role="button" tabindex="0" aria-label="Flashcard">
+          <div class="card-face card-front">
+            <div class="card-head">
+              <div class="badge" id="frontBadge">Русский</div>
+              <div class="tap-tip" id="tapTip">Нажми для переворота</div>
+            </div>
+            <div class="card-body">
+              <div class="phrase" id="frontText"></div>
+            </div>
+            <button class="icon-btn prev-card" id="prevBtn" type="button" aria-label="Previous">←</button>
+            <button class="icon-btn flip-card" id="frontFlipBtn" type="button" aria-label="Flip">↻</button>
+          </div>
+
+          <div class="card-face card-back">
+            <div class="card-head"></div>
+            <div class="card-body">
+              <div class="image-box">
+                <img id="cardImage" alt="Idiom illustration" />
+                <div class="image-fallback" id="imageFallback" hidden>Картинка не найдена.<br>Проверь папку images.</div>
+              </div>
+            </div>
+            <button class="icon-btn flip-card" id="backFlipBtn" type="button" aria-label="Back">↺</button>
+            <button class="icon-btn next-card" id="nextBtn" type="button" aria-label="Next">→</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="empty-state" id="emptyState">
+        <h2 id="emptyTitle">Все карточки отмечены как выученные</h2>
+        <p class="hint" id="emptyText">Можно включить показ всех карточек или сбросить список выученных.</p>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const idioms = [
+      { en: "a piece of cake", ru: "проще простого" },
+      { en: "not my cup of tea", ru: "не по душе, не моё" },
+      { en: "spill the beans", ru: "выдать секрет" },
+      { en: "go bananas", ru: "сходить с ума / сильно радоваться" },
+      { en: "cool as a cucumber", ru: "совершенно спокойный" },
+      { en: "have a sweet tooth", ru: "быть сладкоежкой" },
+      { en: "break the ice", ru: "разрядить обстановку" },
+      { en: "have butterflies in my stomach", ru: "волноваться" },
+      { en: "have cold feet", ru: "струсить в последний момент" },
+      { en: "cry over spilt milk", ru: "плакать над тем, что уже случилось" },
+      { en: "under the weather", ru: "плохо себя чувствовать" },
+      { en: "in a nutshell", ru: "вкратце" },
+      { en: "as white as a ghost", ru: "бледный как привидение" },
+      { en: "make someone’s blood run cold", ru: "приводить в ужас" },
+      { en: "be scared stiff", ru: "сильно испугаться" },
+      { en: "give someone the creeps", ru: "пугать / вызывать мурашки" },
+      { en: "scaredy-cat", ru: "трусишка" },
+      { en: "as busy as a bee", ru: "очень занятый" },
+      { en: "like a bull in a china shop", ru: "неуклюжий, всё рушащий" },
+      { en: "let the cat out of the bag", ru: "проболтаться" },
+      { en: "once in a blue moon", ru: "очень редко" },
+      { en: "hit the books", ru: "засесть за учёбу" },
+      { en: "kill two birds with one stone", ru: "убить двух зайцев" },
+      { en: "thank your lucky stars", ru: "благодарить судьбу" },
+      { en: "don’t look a gift horse in the mouth", ru: "дарёному коню в зубы не смотрят" },
+      { en: "be grateful for small favours", ru: "ценить даже небольшую помощь" },
+      { en: "a tough cookie", ru: "крепкий орешек" },
+      { en: "a wet blanket", ru: "зануда, портящий веселье" },
+      { en: "the big cheese", ru: "важная персона" },
+      { en: "a couch potato", ru: "лежебока" },
+      { en: "money doesn’t grow on trees", ru: "деньги на деревьях не растут" },
+      { en: "cost an arm and a leg", ru: "стоить очень дорого" },
+      { en: "shop till you drop", ru: "ходить по магазинам до изнеможения" },
+      { en: "fall in love with", ru: "влюбиться в" },
+      { en: "the more the merrier", ru: "чем больше, тем веселее" },
+      { en: "ring in the New Year", ru: "встречать Новый год" },
+      { en: "have a whale of a time", ru: "отлично проводить время" },
+      { en: "like Christmas came early", ru: "как будто Рождество наступило раньше" },
+      { en: "Christmas cheer", ru: "рождественское настроение" },
+      { en: "Christmas comes but once a year", ru: "Рождество бывает только раз в году" },
+      { en: "like two peas in a pod", ru: "похожи как две капли воды" },
+      { en: "a storm in a teacup", ru: "буря в стакане воды" },
+      { en: "all ears", ru: "весь внимание" },
+      { en: "puppy love", ru: "детская влюблённость" },
+      { en: "kiss and make up", ru: "помириться" },
+      { en: "full of the joys of spring", ru: "полон весенней радости" },
+      { en: "spring fever", ru: "весеннее возбуждение / желание перемен" },
+      { en: "No matter how long the winter, spring is sure to follow.", ru: "как бы ни была длинна зима, весна всё равно придёт" },
+      { en: "spring cleaning", ru: "генеральная весенняя уборка" },
+      { en: "a spring in one’s step", ru: "бодрая, лёгкая походка" }
+    ].map((item, index) => ({ ...item, id: index + 1 }));
+
+    const uiText = {
+      ru: {
+        title: "#MyIdioms",
+        subtitle: "Нажми на карточку, чтобы перевернуть её.",
+        uiSwitch: "English UI",
+        modeLabel: "Режим",
+        modeRuEn: "RU → EN",
+        modeEnRu: "EN → RU",
+        filterLabel: "Показ карточек",
+        filterActive: "Только активные",
+        filterAll: "Все карточки",
+        startLabel: "Начать заново",
+        restart: "Начать заново",
+        shuffle: "Перемешать",
+        learned: "Выучено",
+        resetLearned: "Сбросить выученные",
+        currentLabel: "Карточка",
+        activeLabel: "Активные",
+        learnedLabel: "Выученные",
+        modeStatLabel: "Режим",
+        tapTip: "Нажми для переворота",
+        emptyTitle: "Все карточки отмечены как выученные",
+        emptyText: "Можно включить показ всех карточек или сбросить список выученных.",
+        sideFrontRuEn: "Русский",
+        sideFrontEnRu: "English",
+        modeStatRuEn: "RU → EN",
+        modeStatEnRu: "EN → RU",
+        imageMissing: "Картинка не найдена.<br>Проверь папку images.",
+        cardAria: "Флеш-карточка"
+      },
+      en: {
+        title: "#MyIdioms",
+        subtitle: "Tap the card to flip it.",
+        uiSwitch: "Русский UI",
+        modeLabel: "Mode",
+        modeRuEn: "RU → EN",
+        modeEnRu: "EN → RU",
+        filterLabel: "Show cards",
+        filterActive: "Active only",
+        filterAll: "All cards",
+        startLabel: "Restart",
+        restart: "Restart",
+        shuffle: "Shuffle",
+        learned: "Learned",
+        resetLearned: "Reset learned",
+        currentLabel: "Card",
+        activeLabel: "Active",
+        learnedLabel: "Learned",
+        modeStatLabel: "Mode",
+        tapTip: "Tap to flip",
+        emptyTitle: "All cards are marked as learned",
+        emptyText: "You can show all cards or reset the learned list.",
+        sideFrontRuEn: "Russian",
+        sideFrontEnRu: "English",
+        modeStatRuEn: "RU → EN",
+        modeStatEnRu: "EN → RU",
+        imageMissing: "Image not found.<br>Check the images folder.",
+        cardAria: "Flashcard"
+      }
+    };
+
+    const state = {
+      uiLang: 'ru',
+      mode: 'ru-en',
+      filter: 'active',
+      order: idioms.map(item => item.id),
+      currentIndex: 0,
+      flipped: false,
+      learned: loadLearned()
+    };
+
+    const els = {
+      titleText: document.getElementById('titleText'),
+      subtitleText: document.getElementById('subtitleText'),
+      uiLangBtn: document.getElementById('uiLangBtn'),
+      filterLabel: document.getElementById('filterLabel'),
+      startLabel: document.getElementById('startLabel'),
+      filterButtons: document.querySelectorAll('#filterButtons button'),
+      restartBtn: document.getElementById('restartBtn'),
+      prevBtn: document.getElementById('prevBtn'),
+      nextBtn: document.getElementById('nextBtn'),
+      shuffleBtn: document.getElementById('shuffleBtn'),
+      learnedBtn: document.getElementById('learnedBtn'),
+      resetLearnedBtn: document.getElementById('resetLearnedBtn'),
+      currentStat: document.getElementById('currentStat'),
+      activeStat: document.getElementById('activeStat'),
+      learnedStat: document.getElementById('learnedStat'),
+      modeStat: document.getElementById('modeStat'),
+      currentLabel: document.getElementById('currentLabel'),
+      activeLabel: document.getElementById('activeLabel'),
+      learnedLabel: document.getElementById('learnedLabel'),
+      modeStatLabel: document.getElementById('modeStatLabel'),
+      modeToggleBtn: document.getElementById('modeToggleBtn'),
+      flashcardWrap: document.getElementById('flashcardWrap'),
+      flashcard: document.getElementById('flashcard'),
+      frontBadge: document.getElementById('frontBadge'),
+      tapTip: document.getElementById('tapTip'),
+      frontText: document.getElementById('frontText'),
+      frontFlipBtn: document.getElementById('frontFlipBtn'),
+      backFlipBtn: document.getElementById('backFlipBtn'),
+      cardImage: document.getElementById('cardImage'),
+      imageFallback: document.getElementById('imageFallback'),
+      emptyState: document.getElementById('emptyState'),
+      emptyTitle: document.getElementById('emptyTitle'),
+      emptyText: document.getElementById('emptyText')
+    };
+
+    function loadLearned() {
+      try {
+        const raw = localStorage.getItem('idiomFlashcardsLearned');
+        const parsed = raw ? JSON.parse(raw) : [];
+        return new Set(Array.isArray(parsed) ? parsed : []);
+      } catch {
+        return new Set();
+      }
+    }
+
+    function saveLearned() {
+      localStorage.setItem('idiomFlashcardsLearned', JSON.stringify([...state.learned]));
+    }
+
+    function activeDeck() {
+      return state.order
+        .map(id => idioms.find(item => item.id === id))
+        .filter(Boolean)
+        .filter(item => state.filter === 'all' || !state.learned.has(item.id));
+    }
+
+    function currentCard() {
+      const deck = activeDeck();
+      if (!deck.length) return null;
+      if (state.currentIndex > deck.length - 1) state.currentIndex = 0;
+      return deck[state.currentIndex];
+    }
+
+    function setButtonActive(nodeList, value, key) {
+      nodeList.forEach(btn => btn.classList.toggle('active', btn.dataset[key] === value));
+    }
+
+    function updateUIText() {
+      const t = uiText[state.uiLang];
+      els.titleText.textContent = t.title;
+      els.subtitleText.textContent = t.subtitle;
+      els.uiLangBtn.textContent = t.uiSwitch;
+      els.filterLabel.textContent = t.filterLabel;
+      els.startLabel.textContent = t.startLabel;
+      els.restartBtn.textContent = t.restart;
+      els.shuffleBtn.textContent = t.shuffle;
+      els.learnedBtn.textContent = t.learned;
+      els.resetLearnedBtn.textContent = t.resetLearned;
+      els.currentLabel.textContent = t.currentLabel;
+      els.activeLabel.textContent = t.activeLabel;
+      els.learnedLabel.textContent = t.learnedLabel;
+      els.modeStatLabel.textContent = t.modeStatLabel;
+      els.tapTip.textContent = t.tapTip;
+      els.emptyTitle.textContent = t.emptyTitle;
+      els.emptyText.textContent = t.emptyText;
+      els.imageFallback.innerHTML = t.imageMissing;
+      els.flashcard.setAttribute('aria-label', t.cardAria);
+
+      els.filterButtons[0].textContent = t.filterActive;
+      els.filterButtons[1].textContent = t.filterAll;
+
+      updateCardTexts();
+      updateStats();
+    }
+
+    function updateStats() {
+      const deck = activeDeck();
+      const position = deck.length ? state.currentIndex + 1 : 0;
+      els.currentStat.textContent = `${position} / ${deck.length}`;
+      els.activeStat.textContent = String(deck.length);
+      els.learnedStat.textContent = String(state.learned.size);
+      const t = uiText[state.uiLang];
+      els.modeStat.textContent = state.mode === 'ru-en' ? t.modeStatRuEn : t.modeStatEnRu;
+    }
+
+    function applyImage(cardId) {
+      const img = els.cardImage;
+      const fallback = els.imageFallback;
+      img.hidden = false;
+      fallback.hidden = true;
+      img.src = `images/${cardId}.png`;
+      img.alt = `Idiom ${cardId}`;
+      img.onerror = () => {
+        img.hidden = true;
+        fallback.hidden = false;
+      };
+      img.onload = () => {
+        img.hidden = false;
+        fallback.hidden = true;
+      };
+    }
+
+    function fitPhraseClass(node, text) {
+      node.textContent = text;
+      node.classList.toggle('small', text.length > 38);
+    }
+
+    function updateCardTexts() {
+      const card = currentCard();
+      const t = uiText[state.uiLang];
+      if (!card) {
+        els.flashcardWrap.style.display = 'none';
+        els.emptyState.classList.add('show');
+        return;
+      }
+      els.flashcardWrap.style.display = 'block';
+      els.emptyState.classList.remove('show');
+
+      const front = state.mode === 'ru-en' ? card.ru : card.en;
+      fitPhraseClass(els.frontText, front);
+      els.frontBadge.textContent = state.mode === 'ru-en' ? t.sideFrontRuEn : t.sideFrontEnRu;
+      applyImage(card.id);
+
+      els.flashcard.classList.toggle('flipped', state.flipped);
+      els.flashcard.style.setProperty('--flip', state.flipped ? '180deg' : '0deg');
+    }
+
+    function render() {
+      setButtonActive(els.filterButtons, state.filter, 'filter');
+      updateUIText();
+      updateStats();
+    }
+
+    function toggleFlip(force) {
+      state.flipped = typeof force === 'boolean' ? force : !state.flipped;
+      els.flashcard.classList.toggle('flipped', state.flipped);
+      els.flashcard.style.setProperty('--flip', state.flipped ? '180deg' : '0deg');
+    }
+
+    function move(step) {
+      const deck = activeDeck();
+      if (!deck.length) return;
+      state.currentIndex = (state.currentIndex + step + deck.length) % deck.length;
+      state.flipped = false;
+      els.flashcard.classList.remove('fade-in');
+      void els.flashcard.offsetWidth;
+      els.flashcard.classList.add('fade-in');
+      render();
+    }
+
+    function shuffleDeck() {
+      for (let i = state.order.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [state.order[i], state.order[j]] = [state.order[j], state.order[i]];
+      }
+      state.currentIndex = 0;
+      state.flipped = false;
+      els.flashcard.classList.remove('shuffle-anim');
+      void els.flashcard.offsetWidth;
+      els.flashcard.classList.add('shuffle-anim');
+      render();
+    }
+
+    function markLearned() {
+      const card = currentCard();
+      if (!card) return;
+      state.learned.add(card.id);
+      saveLearned();
+      els.flashcard.classList.remove('fade-out-left');
+      void els.flashcard.offsetWidth;
+      els.flashcard.classList.add('fade-out-left');
+      setTimeout(() => {
+        els.flashcard.classList.remove('fade-out-left');
+        const deckAfter = activeDeck();
+        if (state.currentIndex >= deckAfter.length) state.currentIndex = 0;
+        state.flipped = false;
+        render();
+      }, 620);
+    }
+
+    function resetLearned() {
+      state.learned.clear();
+      saveLearned();
+      state.currentIndex = 0;
+      state.flipped = false;
+      render();
+    }
+
+    els.uiLangBtn.addEventListener('click', () => {
+      state.uiLang = state.uiLang === 'ru' ? 'en' : 'ru';
+      render();
+    });
+
+    els.filterButtons.forEach(btn => {
+      btn.addEventListener('click', () => {
+        state.filter = btn.dataset.filter;
+        state.currentIndex = 0;
+        state.flipped = false;
+        render();
+      });
+    });
+
+    els.modeToggleBtn.addEventListener('click', () => {
+      state.mode = state.mode === 'ru-en' ? 'en-ru' : 'ru-en';
+      state.flipped = false;
+      render();
+    });
+
+    els.restartBtn.addEventListener('click', () => {
+      state.order = idioms.map(item => item.id);
+      state.currentIndex = 0;
+      state.flipped = false;
+      render();
+    });
+
+    els.frontFlipBtn.addEventListener('click', (e) => { e.stopPropagation(); toggleFlip(true); });
+    els.backFlipBtn.addEventListener('click', (e) => { e.stopPropagation(); toggleFlip(false); });
+    els.prevBtn.addEventListener('click', (e) => { e.stopPropagation(); move(-1); });
+    els.nextBtn.addEventListener('click', (e) => { e.stopPropagation(); move(1); });
+    els.shuffleBtn.addEventListener('click', shuffleDeck);
+    els.learnedBtn.addEventListener('click', markLearned);
+    els.resetLearnedBtn.addEventListener('click', resetLearned);
+
+    els.flashcard.addEventListener('click', (e) => {
+      if (e.target.closest('button')) return;
+      toggleFlip();
+    });
+
+    els.flashcard.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' || e.key === ' ') {
+        e.preventDefault();
+        toggleFlip();
+      }
+      if (e.key === 'ArrowRight') move(1);
+      if (e.key === 'ArrowLeft') move(-1);
+    });
+
+    document.addEventListener('keydown', (e) => {
+      const tag = document.activeElement?.tagName;
+      if (tag === 'BUTTON') return;
+      if (e.key === 'ArrowRight') move(1);
+      if (e.key === 'ArrowLeft') move(-1);
+      if (e.key.toLowerCase() === 'f') toggleFlip();
+    });
+
+    render();
+  </script>
+</body>
+</html>
